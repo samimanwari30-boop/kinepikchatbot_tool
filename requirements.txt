@@ -1,0 +1,6 @@
+Flask
+requests
+matplotlib
+openai
+tiktoken
+networkx

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.matplotlib_cache/
+
+# Generated chart outputs (regenerated on every query)
+static/*.png
+static/*.html
+static/history/
+
+# User data — never commit real accounts or conversation history
+users.json
+conversations/
+
+# Generated cache (large, not source)
+ksea_cache.json
+
+# Environment / secrets
+.env
+*.env
+
+# OS
+.DS_Store
+.claude/

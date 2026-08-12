@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KINEPIK Research Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-brand">
+                    <span class="sidebar-logo">KINEPIK</span>
+                </div>
+                <button class="new-conv-btn" id="new-conv-btn">+ New</button>
+            </div>
+
+            <div class="sidebar-section-label">Conversations</div>
+            <div class="conv-list" id="conv-list"></div>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="user-avatar">{{ username[0].upper() }}</div>
+                    <span class="user-name">{{ username }}</span>
+                </div>
+                <div class="sidebar-actions">
+                    <button class="sidebar-action-btn" id="about-btn" title="About this site">About</button>
+                    <button class="sidebar-action-btn" id="clear-all-btn" title="Clear all conversations">Clear all</button>
+                    <a href="/logout" class="sidebar-action-btn">Sign out</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main area -->
+        <main class="main-area">
+            {% if is_guest %}
+            <div class="guest-banner">
+                Browsing as a guest — your conversations are temporary and will be deleted when you sign out or close this tab.
+                <a href="/register">Create an account</a> to keep your history.
+            </div>
+            {% endif %}
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <h1 class="chat-title">Kinase Research Assistant</h1>
+                    <p class="chat-subtitle">Query kinase activity, signalling networks, and drug perturbations</p>
+                </div>
+            </div>
+
+            <div id="chat-box" class="chat-box">
+                <div class="welcome-message">
+                    <div class="welcome-icon">⬡</div>
+                    <h2>What would you like to explore?</h2>
+                    <p>Ask about kinase activity under a drug, compare conditions, view signalling networks, or generate a heatmap.</p>
+                    <div class="example-queries">
+                        <button class="example-btn">Which kinases are most activated by Dasatinib in MCF7?</button>
+                        <button class="example-btn">Show me the interaction network for EGFR</button>
+                        <button class="example-btn">Compare AKT1 under AZD3759 and Dasatinib in MCF7</button>
+                        <button class="example-btn">Heatmap of CDK1, EGFR and AKT1 under AZD3759 and Dasatinib in MCF7</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="progress-container" id="progress-container" style="display:none">
+                    <div class="progress-msg" id="progress-msg"></div>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="message" placeholder="Ask about kinase signalling..." autocomplete="off">
+                    <button id="send-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox">
+        <img id="lightbox-img" alt="Chart enlarged view">
+        <button id="lightbox-close">&#x2715;</button>
+    </div>
+
+    <!-- About modal -->
+    <div id="about-modal">
+        <div id="about-card">
+            <button id="about-close">&#x2715;</button>
+            <h2>About KINEPIK Research Assistant</h2>
+            <p>
+                This is a conversational interface to KINEPIK, letting you ask natural-language
+                questions about kinase activity, drug perturbations, signalling networks, and
+                phosphorylation data — instead of querying the underlying API directly. Questions
+                are routed to the right analysis, and answers are backed by real computed results,
+                not generated from scratch.
+            </p>
+            <h3>What it can do</h3>
+            <ul>
+                <li><strong>KSEA activity analysis</strong> — find the most activated or inhibited
+                    kinases under a given drug and cell line, or look up a single kinase directly</li>
+                <li><strong>Comparisons</strong> — compare one kinase's activity across different
+                    drugs, across different cell lines, or as a heatmap across several kinases at once</li>
+                <li><strong>Signalling networks</strong> — visualise a kinase's interaction network,
+                    or check whether one kinase targets a specific substrate</li>
+                <li><strong>Phosphosite browsing</strong> — a searchable table of every phosphosite a
+                    kinase is known to target</li>
+                <li><strong>Kinase information lookups</strong> — family, group, and classification data</li>
+                <li><strong>Multi-step conversations</strong> — follow-up questions ("the top one", "its
+                    network") correctly resolve to whichever kinase was just discussed</li>
+            </ul>
+            <h3>Where the data comes from</h3>
+            <p>
+                All data is served from <strong>KINEPIK</strong> (<a href="https://kinepik.org" target="_blank" rel="noopener">kinepik.org</a>),
+                a database combining phosphoproteomics measurements with kinase-substrate interaction
+                data — covering 504 kinases across 61 drug perturbations in 3 cell lines (MCF7, HL60,
+                NTERA2). It draws on 13 published data sources, including:
+            </p>
+            <ul>
+                <li><strong>LINCS P100 assay data</strong> — targeted mass-spectrometry profiling of
+                    around 1,000 phosphosites under chemical and CRISPR perturbations</li>
+                <li><strong>KINOMEscan competition-binding assays</strong> — measuring drug-kinase
+                    binding across hundreds of kinases</li>
+                <li><strong>Cell-line-specific experimental datasets</strong> for MCF7, HL60, and
+                    NTERA2, from thesis research on cell signalling network reasoning (Huebner, M.)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let currentConvId = null;
+        const isGuest = {{ "true" if is_guest else "false" }};
+
+        // ── Guest cleanup on tab close ───────────────────────────────────────────
+        // Best-effort: sendBeacon fires reliably on tab close/navigation, unlike a
+        // normal fetch which the browser may cancel mid-flight. Server-side there's
+        // also an inactivity sweep in guest_store.py in case this never fires.
+        if (isGuest) {
+            window.addEventListener("pagehide", () => {
+                navigator.sendBeacon("/api/guest/cleanup");
+            });
+        }
+
+        // ── Lightbox ───────────────────────────────────────────────────────────
+        const lightbox = document.getElementById("lightbox");
+        const lightboxImg = document.getElementById("lightbox-img");
+        document.getElementById("lightbox-close").addEventListener("click", () => lightbox.classList.remove("active"));
+        lightbox.addEventListener("click", e => { if (e.target === lightbox) lightbox.classList.remove("active"); });
+        function openLightbox(src) { lightboxImg.src = src; lightbox.classList.add("active"); }
+
+        // ── About modal ────────────────────────────────────────────────────────
+        const aboutModal = document.getElementById("about-modal");
+        document.getElementById("about-btn").addEventListener("click", () => aboutModal.classList.add("active"));
+        document.getElementById("about-close").addEventListener("click", () => aboutModal.classList.remove("active"));
+        aboutModal.addEventListener("click", e => { if (e.target === aboutModal) aboutModal.classList.remove("active"); });
+
+        // ── Utils ──────────────────────────────────────────────────────────────
+        function escapeHtml(str) {
+            return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        }
+
+        // Minimal markdown rendering for chat replies — bold text and bullet lists
+        // only (the two patterns GPT actually uses in responses). Escapes HTML
+        // first so this stays safe even though it builds innerHTML afterward.
+        function renderMarkdown(text) {
+            const lines = escapeHtml(text).split("\n");
+            let html = "";
+            let inList = false;
+            for (const line of lines) {
+                const bullet = line.match(/^\s*-\s+(.*)/);
+                if (bullet) {
+                    if (!inList) { html += "<ul>"; inList = true; }
+                    html += `<li>${bullet[1]}</li>`;
+                } else {
+                    if (inList) { html += "</ul>"; inList = false; }
+                    if (line.trim() === "") { html += "<br>"; }
+                    else { html += `<p>${line}</p>`; }
+                }
+            }
+            if (inList) html += "</ul>";
+            return html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        }
+
+        // ── Conversation list ──────────────────────────────────────────────────
+        async function loadConversationList() {
+            const res = await fetch("/api/conversations");
+            const convs = await res.json();
+            const list = document.getElementById("conv-list");
+            list.innerHTML = "";
+            if (convs.length === 0) {
+                list.innerHTML = '<div class="conv-empty">No conversations yet</div>';
+                return;
+            }
+            convs.forEach(c => {
+                const item = document.createElement("div");
+                item.className = "conv-item" + (c.id === currentConvId ? " active" : "");
+                item.dataset.id = c.id;
+                item.innerHTML = `
+                    <div class="conv-item-inner">
+                        <div class="conv-item-title">${escapeHtml(c.title)}</div>
+                        <div class="conv-item-meta">${c.message_count} messages</div>
+                    </div>
+                    <button class="conv-delete-btn" data-id="${c.id}" title="Delete">&#x2715;</button>
+                `;
+                item.addEventListener("click", e => {
+                    if (!e.target.classList.contains("conv-delete-btn")) loadConversation(c.id);
+                });
+                item.querySelector(".conv-delete-btn").addEventListener("click", e => {
+                    e.stopPropagation();
+                    deleteConversation(c.id, item);
+                });
+                list.appendChild(item);
+            });
+        }
+
+        async function loadConversation(convId) {
+            const res = await fetch(`/api/conversations/${convId}`);
+            const conv = await res.json();
+            currentConvId = convId;
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML = "";
+            conv.messages.forEach(msg => appendMessage(msg.role === "user" ? "user" : "bot", msg.content, msg.image, msg.table));
+            loadConversationList();
+        }
+
+        async function deleteConversation(convId, el) {
+            await fetch(`/api/conversations/${convId}`, { method: "DELETE" });
+            if (convId === currentConvId) {
+                currentConvId = null;
+                showWelcome();
+            }
+            loadConversationList();
+        }
+
+        document.getElementById("new-conv-btn").addEventListener("click", async () => {
+            await fetch("/api/conversations/new", { method: "POST" });
+            currentConvId = null;
+            showWelcome();
+            loadConversationList();
+        });
+
+        document.getElementById("clear-all-btn").addEventListener("click", async () => {
+            if (!confirm("Delete all conversations? This cannot be undone.")) return;
+            await fetch("/api/conversations/clear-all", { method: "POST" });
+            currentConvId = null;
+            showWelcome();
+            loadConversationList();
+        });
+
+        // ── Message rendering ──────────────────────────────────────────────────
+        function appendMessage(role, text, imagePath = null, tablePath = null) {
+            const chatBox = document.getElementById("chat-box");
+            const welcome = chatBox.querySelector(".welcome-message");
+            if (welcome) welcome.remove();
+
+            const wrap = document.createElement("div");
+            wrap.className = `message-wrap ${role}`;
+
+            const bubble = document.createElement("div");
+            bubble.className = `message-bubble ${role}`;
+
+            if (role === "bot") {
+                const label = document.createElement("div");
+                label.className = "message-label";
+                label.textContent = "KINEPIK Assistant";
+                bubble.appendChild(label);
+            }
+
+            const content = document.createElement("div");
+            content.className = "message-content";
+            if (role === "bot") { content.innerHTML = renderMarkdown(text); }
+            else { content.textContent = text; }
+            bubble.appendChild(content);
+
+            if (imagePath) {
+                const img = document.createElement("img");
+                img.className = "chat-image";
+                img.src = `/${imagePath}?t=${Date.now()}`;
+                img.alt = "Visualisation";
+                img.title = "Click to enlarge";
+                img.addEventListener("click", () => openLightbox(img.src));
+                bubble.appendChild(img);
+
+                const downloadLink = document.createElement("a");
+                downloadLink.className = "download-link";
+                downloadLink.href = img.src;
+                downloadLink.download = imagePath.split("/").pop();
+                downloadLink.textContent = "Download image";
+                bubble.appendChild(downloadLink);
+            }
+
+            if (tablePath) {
+                const frame = document.createElement("iframe");
+                frame.className = "chat-table-frame";
+                frame.src = `/${tablePath}?t=${Date.now()}`;
+                frame.loading = "lazy";
+                bubble.appendChild(frame);
+            }
+
+            wrap.appendChild(bubble);
+            chatBox.appendChild(wrap);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const chatBox = document.getElementById("chat-box");
+            const wrap = document.createElement("div");
+            wrap.className = "message-wrap bot";
+            wrap.id = "typing-wrap";
+            wrap.innerHTML = `<div class="message-bubble bot typing-indicator"><span></span><span></span><span></span></div>`;
+            chatBox.appendChild(wrap);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById("typing-wrap");
+            if (el) el.remove();
+        }
+
+        function showWelcome() {
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML = `
+            <div class="welcome-message">
+                <div class="welcome-icon">&#x2B21;</div>
+                <h2>What would you like to explore?</h2>
+                <p>Ask about kinase activity under a drug, compare conditions, view signalling networks, or generate a heatmap.</p>
+                <div class="example-queries">
+                    <button class="example-btn">Which kinases are most activated by Dasatinib in MCF7?</button>
+                    <button class="example-btn">Show me the interaction network for EGFR</button>
+                    <button class="example-btn">Compare AKT1 under AZD3759 and Dasatinib in MCF7</button>
+                    <button class="example-btn">Heatmap of CDK1, EGFR and AKT1 under AZD3759 and Dasatinib in MCF7</button>
+                </div>
+            </div>`;
+            bindExamples();
+        }
+
+        function bindExamples() {
+            document.querySelectorAll(".example-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    document.getElementById("message").value = btn.textContent;
+                    document.getElementById("message").focus();
+                });
+            });
+        }
+
+        // ── Progress ───────────────────────────────────────────────────────────
+        let progressInterval = null;
+        function startProgress(perturbation, cellLine) {
+            document.getElementById("progress-container").style.display = "block";
+            document.getElementById("progress-msg").textContent = "Querying KINEPIK database...";
+            progressInterval = setInterval(async () => {
+                try {
+                    const r = await fetch(`/api/progress?perturbation=${encodeURIComponent(perturbation)}&cell_line=${encodeURIComponent(cellLine)}`);
+                    const d = await r.json();
+                    if (d.progress) document.getElementById("progress-msg").textContent = d.progress;
+                } catch {}
+            }, 3000);
+        }
+        function stopProgress() {
+            if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+            document.getElementById("progress-container").style.display = "none";
+        }
+
+        // ── Send ───────────────────────────────────────────────────────────────
+        function setLoading(on) {
+            document.getElementById("send-btn").disabled = on;
+            document.getElementById("message").disabled = on;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("message");
+            const message = input.value.trim();
+            if (!message) return;
+            appendMessage("user", message);
+            input.value = "";
+            setLoading(true);
+            showTypingIndicator();
+            const pertMatch = message.match(/under\s+(\S+)/i);
+            const cellMatch = message.match(/in\s+(MCF7|HL60|NTERA2)/i);
+            startProgress(pertMatch ? pertMatch[1] : "", cellMatch ? cellMatch[1] : "MCF7");
+            try {
+                const res = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+                removeTypingIndicator();
+                stopProgress();
+                appendMessage("bot", data.reply, data.image, data.table);
+                loadConversationList();
+            } catch {
+                removeTypingIndicator();
+                stopProgress();
+                appendMessage("bot", "Something went wrong while contacting the server.");
+            } finally {
+                setLoading(false);
+                input.focus();
+            }
+        }
+
+        document.getElementById("send-btn").addEventListener("click", sendMessage);
+        document.getElementById("message").addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+
+        // ── Init ───────────────────────────────────────────────────────────────
+        bindExamples();
+        loadConversationList();
+    </script>
+</body>
+</html>
