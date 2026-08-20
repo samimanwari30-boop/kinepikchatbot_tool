@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KINEPIK — Sign In</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0d2137;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(8, 145, 178, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(30, 77, 140, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 60% 80%, rgba(8, 145, 178, 0.06) 0%, transparent 40%);
+        }
+
+        /* subtle dot grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 48px 44px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .brand-logo {
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: #0d2137;
+            border-bottom: 3px solid #0891b2;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .brand p {
+            font-size: 13px;
+            color: #64748b;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #0f172a;
+            background: #f8fafc;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #0891b2;
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.12);
+            background: #fff;
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 18px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 13px;
+            background: #0891b2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.4px;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 8px;
+        }
+
+        button[type="submit"]:hover { background: #0e7490; }
+        button[type="submit"]:active { transform: scale(0.99); }
+
+        .switch-auth {
+            text-align: center;
+            margin-top: 22px;
+            font-size: 13px;
+            color: #64748b;
+        }
+        .switch-auth a {
+            color: #0891b2;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .switch-auth a:hover { text-decoration: underline; }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="brand">
+            <div class="brand-logo">KINEPIK</div>
+            <p>Kinase Signalling Research Assistant</p>
+        </div>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" autocomplete="username" autofocus required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit">Sign In</button>
+        </form>
+
+        <p class="switch-auth">Don't have an account? <a href="/register">Create one</a></p>
+        <p class="switch-auth">Just exploring? <a href="/guest">Continue as guest</a> — conversations aren't saved</p>
+
+        <p class="footer-note">Queen Mary University of London &mdash; Bioinformatics</p>
+    </div>
+</body>
+</html>
