@@ -283,7 +283,6 @@ def plot_network(records, central_label, kinase_id=None, kinase_only=True):
         Line2D([0], [0], marker="o", color="w", markerfacecolor="#1d4ed8", markersize=13, label=f"{central_name} (queried)"),
         Line2D([0], [0], marker="o", color="w", markerfacecolor="#93c5fd", markersize=9,  label="Low connectivity"),
         Line2D([0], [0], marker="o", color="w", markerfacecolor="#4365c3", markersize=11, label="High connectivity"),
-        Line2D([0], [0], color="#94a3b8", linewidth=2.0, label="Bidirectional interaction"),
     ]
     ax.legend(handles=legend_elements, loc="lower left", fontsize=8, framealpha=0.85, edgecolor="#e2e8f0")
 
